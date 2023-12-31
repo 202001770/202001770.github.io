@@ -173,6 +173,45 @@
   <script src="static/js/script.js"></script>
   <script type="text/javascript" src="static/js/21012315.js"></script>
   <script>
+    var Fir=true;
+
+    function musicPlay (isPlay) {
+      var media = document.querySelector('#audioDom');
+      if (isPlay && media.paused) {
+        media.play();
+      }
+      if (!isPlay && !media.paused) {
+        media.pause();
+      }
+    }
+    function musicInBrowserHandler () {
+      setTimeout(function () {
+        musicPlay(true)
+      }, 0)
+    }
+    document.body.addEventListener('touchstart', musicInBrowserHandler);
+    $('#yhBtn').click(e => {
+      $('#yhBtn').hide()
+      setTimeout(() => {
+        if (Fir){
+          start();
+          var music2 = document.getElementById("background-music");
+          music2.play();
+          Fir=false;
+        }
+
+        fireworks();
+      }, 5000) // 这里的5000 是5s指烟花延时时间
+      setTimeout(() => {
+        function audioAutoPlay () {
+          var audio = document.getElementById('audioDom');
+          audio.play();
+        }
+        audioAutoPlay();
+      }, 5000) // 这里的5000 是5s指音乐延时时间
+      console.log(updateConfig({ autoLaunch: true }));
+    })
+
     var Frist=true;
     function fireworks () {
       $('.page_one').addClass('hide');
@@ -198,8 +237,8 @@
           content.innerHTML = '<p>' + str_ + '</p>'
         }
       }, 150)
-      var music = document.getElementById("background-music");
-      music.play();
+
+
 
     }
   </script>
