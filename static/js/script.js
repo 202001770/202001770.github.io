@@ -4,6 +4,7 @@ console.clear()
 // and snowballs way beyond its intended size. It's a little clunky
 // reading/working on this single file, but here it is anyways :)
 
+
 const IS_MOBILE = window.innerWidth <= 640
 const IS_DESKTOP = window.innerWidth > 800
 const IS_HEADER = IS_DESKTOP && window.innerHeight < 300
@@ -73,6 +74,20 @@ const stages = [trailsStage, mainStage]
 function fullscreenEnabled() {
   return fscreen.fullscreenEnabled
 }
+
+var music = document.getElementById("background-music");
+var musicControlBtn = document.getElementById("music-control");
+
+musicControlBtn.addEventListener("click", function() {
+    if (music.paused) {
+        music.play();
+        musicControlBtn.textContent = "暂停音乐";
+    } else {
+        music.pause();
+        musicControlBtn.textContent = "播放音乐";
+    }
+});
+
 
 // Note that fullscreen state is synced to store, and the store should be the source
 // of truth for whether the app is in fullscreen mode or not.

@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="UTF-8">
-  <title>一起看烟花吗</title>
+  <title>新年快乐，一起看烟花吗</title>
 
   <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
   <meta name="mobile-web-app-capable" content="yes">
@@ -37,7 +37,11 @@
 </head>
 
 <body>
-
+  <audio id="background-music" loop>
+    <source src="3753958733.mp3" type="audio/mpeg">
+    Your browser does not support the audio element.
+</audio>
+  <button id="music-control">播放音乐</button>
 
   <audio id="audioDom" src="https://sf3-cdn-tos.douyinstatic.com/obj/ies-music/7167684451640560420.mp3" preload="auto"
     ></audio>
@@ -169,36 +173,7 @@
   <script src="static/js/script.js"></script>
   <script type="text/javascript" src="static/js/21012315.js"></script>
   <script>
-    function musicPlay (isPlay) {
-      var media = document.querySelector('#audioDom');
-      if (isPlay && media.paused) {
-        media.play();
-      }
-      if (!isPlay && !media.paused) {
-        media.pause();
-      }
-    }
-    function musicInBrowserHandler () {
-      setTimeout(function () {
-        musicPlay(true)
-      }, 0)
-    }
-    document.body.addEventListener('touchstart', musicInBrowserHandler);
-    $('#yhBtn').click(e => {
-      $('#yhBtn').hide()
-      setTimeout(() => {
-        start()
-        fireworks();
-      }, 5000) // 这里的5000 是5s指烟花延时时间
-      setTimeout(() => {
-        function audioAutoPlay () {
-          var audio = document.getElementById('audioDom');
-          audio.play();
-        }
-        audioAutoPlay();
-      }, 5000) // 这里的5000 是5s指音乐延时时间
-      console.log(updateConfig({ autoLaunch: true }));
-    })
+    var Frist=true;
     function fireworks () {
       $('.page_one').addClass('hide');
       $('.page_two').removeClass('hide');
@@ -210,7 +185,7 @@
       });
     }
     function start () {
-      let str = "尊敬的乘客您好！<br><br>您搭乘的2022次列车即将到站💫<br><br>请您收起回忆💥<br><br>调整心情💥<br><br>准备换乘高速G2023次列车🍗<br><br>幸福即将来临，祝您旅途愉快！💖"
+      let str = "尊敬的乘客您好！<br><br>您搭乘的2024次列车即将到站💫<br><br>请您收起回忆💥<br><br>调整心情💥<br><br>准备换乘高速G2023次列车🍗<br><br>幸福即将来临，祝您旅途愉快！💖"
       let str_ = ''
       let i = 0
       let content = document.getElementById('contents')
@@ -223,6 +198,8 @@
           content.innerHTML = '<p>' + str_ + '</p>'
         }
       }, 150)
+      var music = document.getElementById("background-music");
+      music.play();
     }
   </script>
 
@@ -255,7 +232,6 @@
       } else {
         jump1()
       }
-
     }
   </script>
   <script type="text/javascript">
@@ -286,12 +262,6 @@
     // jump2()
     window.onpageshow = jump2
   </script>
-
-
-
-
-
-
 </body>
 
 </html>
