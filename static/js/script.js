@@ -75,18 +75,7 @@ function fullscreenEnabled() {
   return fscreen.fullscreenEnabled
 }
 
-var music = document.getElementById("background-music");
-var musicControlBtn = document.getElementById("music-control");
 
-musicControlBtn.addEventListener("click", function() {
-    if (music.paused) {
-        music.play();
-        musicControlBtn.textContent = "暂停音乐";
-    } else {
-        music.pause();
-        musicControlBtn.textContent = "播放音乐";
-    }
-});
 
 
 // Note that fullscreen state is synced to store, and the store should be the source
@@ -2322,6 +2311,14 @@ if (IS_HEADER) {
 } else {
   // Allow status to render, then preload assets and start app.
   setLoadingStatus('献给你爱的TA ❤')
+  var music2 = document.getElementById("background-music");
+
+  music2.play();
+    if (music2.paused) {
+        music2.play();
+    } else {
+        music2.pause();
+    }
   setTimeout(() => {
     soundManager.preload().then(init, (reason) => {
       // Codepen preview doesn't like to load the audio, so just init to fix the preview for now.
