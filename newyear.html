@@ -53,9 +53,6 @@
 
   </div>
 
-
-
-
   <div style="height: 0; width: 0; position: absolute; visibility: hidden;">
     <svg xmlns="http://www.w3.org/2000/svg">
       <symbol id="icon-play" viewbox="0 0 24 24">
@@ -175,6 +172,19 @@
   <script>
     var Fir=true;
 
+var music = document.getElementById("background-music");
+var musicControlBtn = document.getElementById("music-control");
+
+musicControlBtn.addEventListener("click", function() {
+    if (music.paused) {
+        music.play();
+        musicControlBtn.textContent = "暂停音乐";
+    } else {
+        music.pause();
+        musicControlBtn.textContent = "播放音乐";
+    }
+});
+
     function musicPlay (isPlay) {
       var media = document.querySelector('#audioDom');
       if (isPlay && media.paused) {
@@ -202,7 +212,7 @@
 
         fireworks();
       }, 5000) // 这里的5000 是5s指烟花延时时间
-      setTimeout(() => {
+💥      setTimeout(() => {
         function audioAutoPlay () {
           var audio = document.getElementById('audioDom');
           audio.play();
@@ -224,22 +234,8 @@
       });
     }
     function start () {
-      let str = "尊敬的乘客您好！<br><br>您搭乘的2024次列车即将到站💫<br><br>请您收起回忆💥<br><br>调整心情💥<br><br>准备换乘高速G2025次列车🍗<br><br>幸福即将来临，祝您旅途愉快！💖"
-      let str_ = ''
-      let i = 0
-      let content = document.getElementById('contents')
-      let timer = setInterval(() => {
-        if (str_.length < str.length) {
-          str_ += str[i++]
-          content.innerHTML = '<p>' + str_ + '<span class="xx" style="opacity: 1;    color: red;">❤</span></p>'                        //打印时加光标
-        } else {
-          clearInterval(timer)
-          content.innerHTML = '<p>' + str_ + '</p>'
-        }
-      }, 150)
-
-
-
+      var music = document.getElementById("background-music");
+      music.play();
     }
   </script>
 
