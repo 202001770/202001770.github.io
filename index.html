@@ -2,98 +2,169 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Login and Capture Screen</title>
+<title>Image Crop Tool with Transparent Crop Area and Draggable</title>
 <style>
   body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    background-color: #f0f0f0;
-  }
-  .screen {
-    display: none;
-    width: 100%;
-    height: 100vh;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-  }
-  .screen.active {
     display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
   }
-  .login-container, .capture-container {
-    width: 90%;
-    max-width: 400px;
-    margin: auto;
-    text-align: center;
+  canvas {
+    border: 1px solid black;
   }
-  input, .login-button, #snap, #uploadImage {
-    width: 100%;
-    padding: 10px;
-    margin-top: 10px;
-    box-sizing: border-box;
-  }
-  #displayCanvas, video {
-    width: 100%;
-    max-width: 400px;
-  }
-  .pull-up-bar {
-    position: fixed;
-    bottom: 0;
-    width: 100%;
-    background: #ddd;
-    text-align: center;
-    padding: 10px;
-    font-size: 16px;
-    display: none;
+  #imageLoader {
+    position: absolute;
+    top: 20px;
+    left: 20px;
   }
 </style>
 </head>
 <body>
 
-<!-- Login Screen -->
-<div id="loginScreen" class="screen active">
-  <div class="login-container">
-    <h2>Login</h2>
-    <input type="text" id="username" placeholder="Username" required>
-    <input type="password" id="password" placeholder="Password" required>
-    <button class="login-button" onclick="login()">Login</button>
-  </div>
-</div>
-
-<!-- Capture Screen -->
-<div id="captureScreen" class="screen">
-  <div class="capture-container">
-    <video id="video" autoplay></video>
-    <button id="snap">拍照</button>
-    <button id="uploadImage">选择照片</button>
-    <canvas id="displayCanvas"></canvas>
-  </div>
-  <div class="pull-up-bar" id="pullUpBar">Swipe up to see username</div>
-</div>
+<input type="file" id="imageLoader" name="imageLoader"/>
+<canvas id="canvas" width="800" height="600"></canvas>
 
 <script>
-let currentUser = '';
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const imageLoader = document.getElementById('imageLoader');
+  let image = new Image();
 
-function login() {
-  // Assume login is successful
-  currentUser = document.getElementById('username').value;
-  document.getElementById('loginScreen').classList.remove('active');
-  document.getElementById('captureScreen').classList.add('active');
-  document.getElementById('pullUpBar').style.display = 'block';
-  initCamera();
-}
+  let rect = { x: 0, y: 0, width: 0, height: 0 };
+  let draggingResizer = { dragging: false, index: null };
+  let draggingRect = false;
+  let dragStartLocation = {};
+  let handleSize = 8;
+  let handles = [];
 
-function initCamera() {
-  // Initialize camera logic here
-}
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
 
-// Example logic to show pull-up bar content
-document.getElementById('pullUpBar').addEventListener('click', function() {
-  alert('Logged in as: ' + currentUser);
-});
+    // Dim outside rectangle
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.beginPath();
+    ctx.rect(rect.x, rect.y, rect.width, rect.height);
+    ctx.fill();
+    ctx.restore();
+
+    // Draw rectangle border
+    ctx.strokeStyle = 'white';
+    ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
+
+    // Draw resize handles
+    handles.forEach((handle, index) => {
+      ctx.fillStyle = 'white';
+      ctx.fillRect(handle.x - handleSize / 2, handle.y - handleSize / 2, handleSize, handleSize);
+    });
+  }
+
+  function updateHandles() {
+    handles = [
+      { x: rect.x, y: rect.y }, // Top-left
+      { x: rect.x + rect.width, y: rect.y }, // Top-right
+      { x: rect.x, y: rect.y + rect.height }, // Bottom-left
+      { x: rect.x + rect.width, y: rect.y + rect.height } // Bottom-right
+    ];
+  }
+
+  function initCropArea() {
+    rect = {
+      x: 0,
+      y: (canvas.height / 2) - ((canvas.height / 3) / 2),
+      width: canvas.width,
+      height: canvas.height / 3
+    };
+    updateHandles();
+    draw();
+  }
+
+  imageLoader.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      image.onload = function() {
+        canvas.width = image.width;
+        canvas.height = image.height;
+        initCropArea();
+      }
+      image.src = event.target.result;
+    }
+    reader.readAsDataURL(file);
+  });
+
+  function pointInRect(x, y) {
+    return x >= rect.x && x <= rect.x + rect.width && y >= rect.y && y <= rect.y + rect.height;
+  }
+
+  canvas.addEventListener('mousedown', function(event) {
+    dragStartLocation = { x: event.offsetX, y: event.offsetY };
+    draggingResizer.index = handles.findIndex(handle =>
+      dragStartLocation.x >= handle.x - handleSize / 2 &&
+      dragStartLocation.x <= handle.x + handleSize / 2 &&
+      dragStartLocation.y >= handle.y - handleSize / 2 &&
+      dragStartLocation.y <= handle.y + handleSize / 2
+    );
+    draggingResizer.dragging = draggingResizer.index !== -1;
+
+    if (!draggingResizer.dragging) {
+      draggingRect = pointInRect(dragStartLocation.x, dragStartLocation.y);
+    }
+  });
+
+  canvas.addEventListener('mousemove', function(event) {
+    if (draggingResizer.dragging) {
+      const mouseX = event.offsetX;
+      const mouseY = event.offsetY;
+      const dx = mouseX - dragStartLocation.x;
+      const dy = mouseY - dragStartLocation.y;
+
+      switch (draggingResizer.index) {
+        case 0: // Top-left
+          rect.x += dx;
+          rect.width -= dx;
+          rect.y += dy;
+          rect.height -= dy;
+          break;
+        case 1: // Top-right
+          rect.width += dx;
+          rect.y += dy;
+          rect.height -= dy;
+          break;
+        case 2: // Bottom-left
+          rect.x += dx;
+          rect.width -= dx;
+          rect.height += dy;
+          break;
+        case 3: // Bottom-right
+          rect.width += dx;
+          rect.height += dy;
+          break;
+      }
+      dragStartLocation = { x: mouseX, y: mouseY };
+      updateHandles();
+      draw();
+    } else if (draggingRect) {
+      const dx = event.offsetX - dragStartLocation.x;
+      const dy = event.offsetY - dragStartLocation.y;
+      rect.x += dx;
+      rect.y += dy;
+      dragStartLocation = { x: event.offsetX, y: event.offsetY };
+      updateHandles();
+      draw();
+    }
+  });
+
+  canvas.addEventListener('mouseup', function() {
+    draggingResizer.dragging = false;
+    draggingRect = false;
+  });
 </script>
-
 </body>
 </html>
