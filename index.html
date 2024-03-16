@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Image Crop Tool with Transparent Crop Area and Draggable for Mobile</title>
+<title>Image Crop Tool with Adjustable Area</title>
 <style>
   body {
     display: flex;
@@ -10,6 +10,7 @@
     align-items: center;
     height: 100vh;
     margin: 0;
+    overflow: hidden;
   }
   canvas {
     border: 1px solid black;
@@ -24,29 +25,22 @@
 <body>
 
 <input type="file" id="imageLoader" name="imageLoader"/>
-<canvas id="canvas" width="800" height="600"></canvas>
+<canvas id="canvas"></canvas>
 
 <script>
   const canvas = document.getElementById('canvas');
   const ctx = canvas.getContext('2d');
   const imageLoader = document.getElementById('imageLoader');
   let image = new Image();
-
-  let rect = { x: 0, y: 0, width: 0, height: 0 };
-  let draggingResizer = { dragging: false, index: null };
-  let draggingRect = false;
-  let dragStartLocation = {};
-  let handleSize = 8;
-  let handles = [];
+  let rect;
+  let drag = false;
+  let mouseX, mouseY, closeEnough = 10, dragTL = dragBL = dragTR = dragBR = false;
 
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-
-    // Dim outside rectangle
     ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-
     ctx.save();
     ctx.globalCompositeOperation = 'destination-out';
     ctx.beginPath();
@@ -54,35 +48,20 @@
     ctx.fill();
     ctx.restore();
 
-    // Draw rectangle border
-    ctx.strokeStyle = 'white';
+    // Draw the rectangle outline
+    ctx.strokeStyle = 'red';
     ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
 
-    // Draw resize handles
-    handles.forEach((handle, index) => {
-      ctx.fillStyle = 'white';
-      ctx.fillRect(handle.x - handleSize / 2, handle.y - handleSize / 2, handleSize, handleSize);
-    });
+    // Draw the draggable squares
+    drawHandles();
   }
 
-  function updateHandles() {
-    handles = [
-      { x: rect.x, y: rect.y }, // Top-left
-      { x: rect.x + rect.width, y: rect.y }, // Top-right
-      { x: rect.x, y: rect.y + rect.height }, // Bottom-left
-      { x: rect.x + rect.width, y: rect.y + rect.height } // Bottom-right
-    ];
-  }
-
-  function initCropArea() {
-    rect = {
-      x: 100,
-      y: 150,
-      width: 200,
-      height: 100
-    };
-    updateHandles();
-    draw();
+  function drawHandles() {
+    ctx.fillStyle = 'green';
+    ctx.fillRect(rect.x - closeEnough, rect.y - closeEnough, closeEnough * 2, closeEnough * 2); // top left
+    ctx.fillRect(rect.x + rect.width - closeEnough, rect.y - closeEnough, closeEnough * 2, closeEnough * 2); // top right
+    ctx.fillRect(rect.x - closeEnough, rect.y + rect.height - closeEnough, closeEnough * 2, closeEnough * 2); // bottom left
+    ctx.fillRect(rect.x + rect.width - closeEnough, rect.y + rect.height - closeEnough, closeEnough * 2, closeEnough * 2); // bottom right
   }
 
   imageLoader.addEventListener('change', function(e) {
@@ -92,71 +71,56 @@
       image.onload = function() {
         canvas.width = image.width;
         canvas.height = image.height;
-        initCropArea();
-      }
+        rect = { x: canvas.width / 4, y: canvas.height / 4, width: canvas.width / 2, height: canvas.height / 3 };
+        draw();
+      };
       image.src = event.target.result;
     };
     reader.readAsDataURL(file);
   });
 
-  // Combined mouse and touch events
-  function getEventLocation(event) {
-    if (event.touches && event.touches.length > 0) {
-      return { x: event.touches[0].clientX, y: event.touches[0].clientY };
-    } else {
-      return { x: event.clientX, y: event.clientY };
+  canvas.addEventListener('mousedown', function(e) {
+    mouseX = e.pageX - this.offsetLeft;
+    mouseY = e.pageY - this.offsetTop;
+    if (mouseX >= rect.x && mouseX <= rect.x + rect.width && mouseY >= rect.y && mouseY <= rect.y + rect.height) {
+      drag = true;
     }
-  }
-
-  function startDrag(event) {
-    event.preventDefault();
-    dragStartLocation = getEventLocation(event);
-    draggingResizer.index = handles.findIndex(handle =>
-      Math.abs(dragStartLocation.x - canvas.offsetLeft - handle.x) < handleSize &&
-      Math.abs(dragStartLocation.y - canvas.offsetTop - handle.y) < handleSize
-    );
-    draggingResizer.dragging = draggingResizer.index !== -1;
-
-    if (!draggingResizer.dragging) {
-      draggingRect = pointInRect(dragStartLocation.x - canvas.offsetLeft, dragStartLocation.y - canvas.offsetTop);
+    // Check if mouse is within the handle boxes
+    if (checkCloseEnough(mouseX, rect.x) && checkCloseEnough(mouseY, rect.y)) {
+      dragTL = true;
+    } else if (checkCloseEnough(mouseX, rect.x + rect.width) && checkCloseEnough(mouseY, rect.y)) {
+      dragTR = true;
+    } else if (checkCloseEnough(mouseX, rect.x) && checkCloseEnough(mouseY, rect.y + rect.height)) {
+      dragBL = true;
+    } else if (checkCloseEnough(mouseX, rect.x + rect.width) && checkCloseEnough(mouseY, rect.y + rect.height)) {
+      dragBR = true;
     }
-  }
+  });
 
-  function drag(event) {
-    if (draggingResizer.dragging || draggingRect) {
-      const location = getEventLocation(event);
-      const dx = location.x - dragStartLocation.x;
-      const dy = location.y - dragStartLocation.y;
-      dragStartLocation = location;
-
-      if (draggingResizer.dragging) {
-        // Adjust size based on which handle is dragged
-        // Similar to previous logic
-      } else if (draggingRect) {
-        rect.x += dx;
-        rect.y += dy;
-        updateHandles();
-      }
-
+  canvas.addEventListener('mousemove', function(e) {
+    if (drag) {
+      rect.x += e.pageX - this.offsetLeft - mouseX;
+      rect.y += e.pageY - this.offsetTop - mouseY;
       draw();
+      mouseX = e.pageX - this.offsetLeft;
+      mouseY = e.pageY - this.offsetTop;
+    } else if (dragTL || dragTR || dragBL || dragBR) {
+      // Resize the rectangle
+      rect.width = (dragTL || dragBL) ? rect.width - (e.pageX - this.offsetLeft - mouseX) : rect.width + (e.pageX - this.offsetLeft - mouseX);
+      rect.height = (dragTL || dragTR) ? rect.height - (e.pageY - this.offsetTop - mouseY) : rect.height + (e.pageY - this.offsetTop - mouseY);
+      draw();
+      mouseX = e.pageX - this.offsetLeft;
+      mouseY = e.pageY - this.offsetTop;
     }
-  }
+  });
 
-  function endDrag(event) {
-    draggingResizer.dragging = false;
-    draggingRect = false;
-  }
+  canvas.addEventListener('mouseup', function() {
+    drag = false;
+    dragTL = dragTR = dragBL = dragBR = false;
+  });
 
-  canvas.addEventListener('mousedown', startDrag);
-  canvas.addEventListener('mousemove', drag);
-  canvas.addEventListener('mouseup', endDrag);
-
-  canvas.addEventListener('touchstart', startDrag);
-  canvas.addEventListener('touchmove', drag);
-  canvas.addEventListener('touchend', endDrag);
-
-  function pointInRect(x, y) {
-    return x >= rect.x && x <= rect.x + rect.width && y >= rect.y && y <= rect.y + rect.height;
+  function checkCloseEnough(p1, p2) {
+    return Math.abs(p1 - p2) < closeEnough;
   }
 </script>
 </body>
