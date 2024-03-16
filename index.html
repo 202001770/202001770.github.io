@@ -2,88 +2,96 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Image Crop Tool with Transparent Crop Area and Draggable</title>
+<title>Full Feature: Login, Capture, and Crop</title>
 <style>
-  body {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
+  body, html {
+    height: 100%;
     margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
   }
-  canvas {
-    border: 1px solid black;
+  .container {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  .active {
+    display: flex;
+  }
+  canvas, video {
+    border: 1px solid #ddd;
+    margin-top: 20px;
   }
   #imageLoader {
-    position: absolute;
-    top: 20px;
-    left: 20px;
+    display: none;
+  }
+  .button {
+    margin-top: 10px;
   }
 </style>
 </head>
 <body>
 
-<input type="file" id="imageLoader" name="imageLoader"/>
-<canvas id="canvas" width="800" height="600"></canvas>
+<div id="loginContainer" class="container active">
+  <input type="text" id="username" placeholder="Username">
+  <input type="password" id="password" placeholder="Password">
+  <button class="button" onclick="login()">Login</button>
+</div>
+
+<div id="captureContainer" class="container">
+  <video id="video" width="640" height="480" autoplay></video>
+  <button class="button" id="snap">Capture</button>
+  <button class="button" onclick="document.getElementById('imageLoader').click();">Select Photo</button>
+  <input type="file" id="imageLoader" accept="image/*">
+  <canvas id="canvas" width="640" height="480"></canvas>
+  <button class="button" id="confirmCrop">Confirm Crop</button>
+</div>
 
 <script>
+  let currentUser = '';
+  const video = document.getElementById('video');
   const canvas = document.getElementById('canvas');
   const ctx = canvas.getContext('2d');
   const imageLoader = document.getElementById('imageLoader');
   let image = new Image();
+  let cropRect = { x: 150, y: 100, width: 340, height: 280 };
+  let dragStart = null;
+  let dragging = false;
+  let resizing = false;
+  let currentHandle = null;
+  const handleSize = 10;
 
-  let rect = { x: 0, y: 0, width: 0, height: 0 };
-  let draggingResizer = { dragging: false, index: null };
-  let draggingRect = false;
-  let dragStartLocation = {};
-  let handleSize = 8;
-  let handles = [];
-
-  function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-
-    // Dim outside rectangle
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    ctx.save();
-    ctx.globalCompositeOperation = 'destination-out';
-    ctx.beginPath();
-    ctx.rect(rect.x, rect.y, rect.width, rect.height);
-    ctx.fill();
-    ctx.restore();
-
-    // Draw rectangle border
-    ctx.strokeStyle = 'white';
-    ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
-
-    // Draw resize handles
-    handles.forEach((handle, index) => {
-      ctx.fillStyle = 'white';
-      ctx.fillRect(handle.x - handleSize / 2, handle.y - handleSize / 2, handleSize, handleSize);
-    });
+  function login() {
+    // Here, implement your actual login logic
+    currentUser = document.getElementById('username').value;
+    if (currentUser) { // Simplified check
+      document.getElementById('loginContainer').classList.remove('active');
+      document.getElementById('captureContainer').classList.add('active');
+      startCamera();
+    } else {
+      alert('Please enter username');
+    }
   }
 
-  function updateHandles() {
-    handles = [
-      { x: rect.x, y: rect.y }, // Top-left
-      { x: rect.x + rect.width, y: rect.y }, // Top-right
-      { x: rect.x, y: rect.y + rect.height }, // Bottom-left
-      { x: rect.x + rect.width, y: rect.y + rect.height } // Bottom-right
-    ];
+  function startCamera() {
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then(function(stream) {
+        video.srcObject = stream;
+      }).catch(function(error) {
+        console.error("Unable to access camera: ", error);
+      });
   }
 
-  function initCropArea() {
-    rect = {
-      x: 0,
-      y: (canvas.height / 2) - ((canvas.height / 3) / 2),
-      width: canvas.width,
-      height: canvas.height / 3
-    };
-    updateHandles();
-    draw();
-  }
+  document.getElementById('snap').addEventListener('click', () => {
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    video.srcObject.getTracks().forEach(track => track.stop()); // Stop the camera
+    drawCropRect();
+  });
 
   imageLoader.addEventListener('change', function(e) {
     const file = e.target.files[0];
@@ -92,79 +100,121 @@
       image.onload = function() {
         canvas.width = image.width;
         canvas.height = image.height;
-        initCropArea();
-      }
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+        drawCropRect();
+      };
       image.src = event.target.result;
-    }
+    };
     reader.readAsDataURL(file);
   });
 
-  function pointInRect(x, y) {
-    return x >= rect.x && x <= rect.x + rect.width && y >= rect.y && y <= rect.y + rect.height;
+  function drawCropRect() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = 'red';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(cropRect.x, cropRect.y, cropRect.width, cropRect.height);
+
+    // Draw resize handles
+    const handles = getHandles();
+    handles.forEach(handle => {
+      ctx.fillStyle = 'blue';
+      ctx.fillRect(handle.x - handleSize / 2, handle.y - handleSize / 2, handleSize, handleSize);
+    });
   }
 
-  canvas.addEventListener('mousedown', function(event) {
-    dragStartLocation = { x: event.offsetX, y: event.offsetY };
-    draggingResizer.index = handles.findIndex(handle =>
-      dragStartLocation.x >= handle.x - handleSize / 2 &&
-      dragStartLocation.x <= handle.x + handleSize / 2 &&
-      dragStartLocation.y >= handle.y - handleSize / 2 &&
-      dragStartLocation.y <= handle.y + handleSize / 2
-    );
-    draggingResizer.dragging = draggingResizer.index !== -1;
+  function getHandles() {
+    return [
+      { x: cropRect.x, y: cropRect.y }, // Top-left
+      { x: cropRect.x + cropRect.width, y: cropRect.y }, // Top-right
+      { x: cropRect.x, y: cropRect.y + cropRect.height }, // Bottom-left
+      { x: cropRect.x + cropRect.width, y: cropRect.y + cropRect.height } // Bottom-right
+    ];
+  }
 
-    if (!draggingResizer.dragging) {
-      draggingRect = pointInRect(dragStartLocation.x, dragStartLocation.y);
+  canvas.addEventListener('mousedown', function(e) {
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    dragStart = { x, y };
+
+    const handles = getHandles();
+    currentHandle = handles.findIndex(handle =>
+      x >= handle.x - handleSize / 2 && x <= handle.x + handleSize / 2 &&
+      y >= handle.y - handleSize / 2 && y <= handle.y + handleSize / 2
+    );
+
+    if (currentHandle !== -1) {
+      resizing = true;
+    } else if (x >= cropRect.x && x <= cropRect.x + cropRect.width &&
+               y >= cropRect.y && y <= cropRect.y + cropRect.height) {
+      dragging = true;
     }
   });
 
-  canvas.addEventListener('mousemove', function(event) {
-    if (draggingResizer.dragging) {
-      const mouseX = event.offsetX;
-      const mouseY = event.offsetY;
-      const dx = mouseX - dragStartLocation.x;
-      const dy = mouseY - dragStartLocation.y;
-
-      switch (draggingResizer.index) {
-        case 0: // Top-left
-          rect.x += dx;
-          rect.width -= dx;
-          rect.y += dy;
-          rect.height -= dy;
-          break;
-        case 1: // Top-right
-          rect.width += dx;
-          rect.y += dy;
-          rect.height -= dy;
-          break;
-        case 2: // Bottom-left
-          rect.x += dx;
-          rect.width -= dx;
-          rect.height += dy;
-          break;
-        case 3: // Bottom-right
-          rect.width += dx;
-          rect.height += dy;
-          break;
-      }
-      dragStartLocation = { x: mouseX, y: mouseY };
-      updateHandles();
-      draw();
-    } else if (draggingRect) {
-      const dx = event.offsetX - dragStartLocation.x;
-      const dy = event.offsetY - dragStartLocation.y;
-      rect.x += dx;
-      rect.y += dy;
-      dragStartLocation = { x: event.offsetX, y: event.offsetY };
-      updateHandles();
-      draw();
+  canvas.addEventListener('mousemove', function(e) {
+    if (resizing) {
+      resizeCropArea(e);
+    } else if (dragging) {
+      moveCropArea(e);
     }
   });
 
   canvas.addEventListener('mouseup', function() {
-    draggingResizer.dragging = false;
-    draggingRect = false;
+    dragging = false;
+    resizing = false;
   });
+
+  function moveCropArea(e) {
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const dx = x - dragStart.x;
+    const dy = y - dragStart.y;
+
+    cropRect.x += dx;
+    cropRect.y += dy;
+
+    dragStart = { x, y };
+    drawCropRect();
+  }
+
+  function resizeCropArea(e) {
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const dx = x - dragStart.x;
+    const dy = y - dragStart.y;
+
+    switch (currentHandle) {
+      case 0: // Top-left
+        cropRect.x += dx;
+        cropRect.width -= dx;
+        cropRect.y += dy;
+        cropRect.height -= dy;
+        break;
+      case 1: // Top-right
+        cropRect.width += dx;
+        cropRect.y += dy;
+        cropRect.height -= dy;
+        break;
+      case 2: // Bottom-left
+        cropRect.x += dx;
+        cropRect.width -= dx;
+        cropRect.height += dy;
+        break;
+      case 3: // Bottom-right
+        cropRect.width += dx;
+        cropRect.height += dy;
+        break;
+    }
+
+    dragStart = { x, y };
+    drawCropRect();
+  }
+
+  // Add more code here for further functionalities, such as confirming the crop
 </script>
+
 </body>
 </html>
