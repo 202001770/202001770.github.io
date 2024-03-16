@@ -3,61 +3,97 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mobile Login Screen</title>
+<title>Login and Capture Screen</title>
 <style>
   body {
     font-family: Arial, sans-serif;
-    background-color: #f0f0f0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
     margin: 0;
+    padding: 0;
+    background-color: #f0f0f0;
   }
-  .login-container {
-    background-color: white;
-    padding: 20px;
-    border-radius: 5px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  .screen {
+    display: none;
+    width: 100%;
+    height: 100vh;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+  }
+  .screen.active {
+    display: flex;
+  }
+  .login-container, .capture-container {
     width: 90%;
     max-width: 400px;
+    margin: auto;
+    text-align: center;
   }
-  .form-input {
-    margin-bottom: 15px;
-  }
-  .form-input input {
+  input, .login-button, #snap, #uploadImage {
     width: 100%;
     padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    box-sizing: border-box; /* Ensures padding does not affect the overall width */
+    margin-top: 10px;
+    box-sizing: border-box;
   }
-  .login-button {
-    background-color: #007bff;
-    color: white;
-    padding: 10px;
-    border: none;
-    border-radius: 4px;
+  #displayCanvas, video {
     width: 100%;
-    cursor: pointer;
+    max-width: 400px;
   }
-  .login-button:hover {
-    background-color: #0056b3;
+  .pull-up-bar {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background: #ddd;
+    text-align: center;
+    padding: 10px;
+    font-size: 16px;
+    display: none;
   }
 </style>
 </head>
 <body>
 
-<div class="login-container">
-  <h2>Login</h2>
-  <div class="form-input">
-    <input type="text" placeholder="Username" name="username" required>
+<!-- Login Screen -->
+<div id="loginScreen" class="screen active">
+  <div class="login-container">
+    <h2>Login</h2>
+    <input type="text" id="username" placeholder="Username" required>
+    <input type="password" id="password" placeholder="Password" required>
+    <button class="login-button" onclick="login()">Login</button>
   </div>
-  <div class="form-input">
-    <input type="password" placeholder="Password" name="password" required>
-  </div>
-  <button class="login-button" type="submit">Login</button>
 </div>
+
+<!-- Capture Screen -->
+<div id="captureScreen" class="screen">
+  <div class="capture-container">
+    <video id="video" autoplay></video>
+    <button id="snap">拍照</button>
+    <button id="uploadImage">选择照片</button>
+    <canvas id="displayCanvas"></canvas>
+  </div>
+  <div class="pull-up-bar" id="pullUpBar">Swipe up to see username</div>
+</div>
+
+<script>
+let currentUser = '';
+
+function login() {
+  // Assume login is successful
+  currentUser = document.getElementById('username').value;
+  document.getElementById('loginScreen').classList.remove('active');
+  document.getElementById('captureScreen').classList.add('active');
+  document.getElementById('pullUpBar').style.display = 'block';
+  initCamera();
+}
+
+function initCamera() {
+  // Initialize camera logic here
+}
+
+// Example logic to show pull-up bar content
+document.getElementById('pullUpBar').addEventListener('click', function() {
+  alert('Logged in as: ' + currentUser);
+});
+</script>
 
 </body>
 </html>
