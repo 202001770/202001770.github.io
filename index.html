@@ -1,34 +1,55 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="style.css">
-    <title>Happy New Year 2024</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Camera Capture and Display on Canvas</title>
 </head>
 <body>
-    <div class="wrapper">
-        <h1>Thời gian chỉ còn...</h1>
-        <div class="box-time">
-            <div class="time">
-                <p>Ngày</p>
-                <span id="days">day</span>
-            </div>
-            <div class="time">
-                <p>Giờ</p>
-                <span id="hours">hours</span>
-            </div>
-            <div class="time">
-                <p>Phút</p>
-                <span id="minutes">minute</span>
-            </div>
-            <div class="time">
-                <p>Giây</p>
-                <span id="seconds">seconds</span>
-            </div>
-        </div>
-    </div>
+
+<h2>使用摄像头拍照并显示</h2>
+
+<!-- 显示视频流的视频元素 -->
+<video id="video" width="640" height="480" autoplay></video>
+<button id="snap">拍照</button>
+
+<!-- 用于拍照的画布（隐藏） -->
+<canvas id="captureCanvas" width="640" height="480" style="display:none;"></canvas>
+
+<!-- 用于显示照片的画布 -->
+<canvas id="displayCanvas" width="640" height="480"></canvas>
+
+<script>
+// 获取视频元素和两个画布元素
+const video = document.getElementById('video');
+const captureCanvas = document.getElementById('captureCanvas');
+const displayCanvas = document.getElementById('displayCanvas');
+const captureContext = captureCanvas.getContext('2d');
+const displayContext = displayCanvas.getContext('2d');
+
+// 请求用户的媒体设备
+navigator.mediaDevices.getUserMedia({ video: true })
+  .then(function(stream) {
+    video.srcObject = stream;
+  })
+  .catch(function(error) {
+    console.error("无法获取摄像头输入：", error);
+  });
+
+// 拍照
+document.getElementById('snap').addEventListener('click', function() {
+  // 将视频帧绘制到捕获用的画布上
+  captureContext.drawImage(video, 0, 0, 640, 480);
+  // 停止视频流
+  video.srcObject.getTracks().forEach(track => track.stop());
+  // 隐藏视频元素
+  video.style.display = 'none';
+
+  // 将捕获的图像绘制到显示用的画布上
+  displayContext.drawImage(captureCanvas, 0, 0, 640, 480);
+});
+</script>
+
 </body>
-<script src="app.js"></script>
 </html>
+
