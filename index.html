@@ -3,76 +3,61 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Camera Capture and Upload Image to Canvas</title>
+<title>Mobile Login Screen</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+  }
+  .login-container {
+    background-color: white;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    width: 90%;
+    max-width: 400px;
+  }
+  .form-input {
+    margin-bottom: 15px;
+  }
+  .form-input input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box; /* Ensures padding does not affect the overall width */
+  }
+  .login-button {
+    background-color: #007bff;
+    color: white;
+    padding: 10px;
+    border: none;
+    border-radius: 4px;
+    width: 100%;
+    cursor: pointer;
+  }
+  .login-button:hover {
+    background-color: #0056b3;
+  }
+</style>
 </head>
 <body>
 
-<h2>使用摄像头拍照或选择照片显示</h2>
-
-<!-- 显示视频流的视频元素 -->
-<video id="video" width="640" height="480" autoplay></video>
-<button id="snap">拍照</button>
-
-<!-- 选择图片文件的输入 -->
-<input type="file" id="fileInput" accept="image/*" style="display:none;">
-<button id="uploadImage">选择照片</button>
-
-<!-- 用于拍照的画布（隐藏） -->
-<canvas id="captureCanvas" width="640" height="480" style="display:none;"></canvas>
-
-<!-- 用于显示照片的画布 -->
-<canvas id="displayCanvas" width="640" height="480"></canvas>
-
-<script>
-// 获取元素
-const video = document.getElementById('video');
-const captureCanvas = document.getElementById('captureCanvas');
-const displayCanvas = document.getElementById('displayCanvas');
-const captureContext = captureCanvas.getContext('2d');
-const displayContext = displayCanvas.getContext('2d');
-const fileInput = document.getElementById('fileInput');
-
-// 请求用户的媒体设备
-navigator.mediaDevices.getUserMedia({ video: true })
-  .then(function(stream) {
-    video.srcObject = stream;
-  })
-  .catch(function(error) {
-    console.error("无法获取摄像头输入：", error);
-  });
-
-// 拍照并显示在画布上
-document.getElementById('snap').addEventListener('click', function() {
-  captureContext.drawImage(video, 0, 0, 640, 480);
-  video.srcObject.getTracks().forEach(track => track.stop());
-  video.style.display = 'none';
-  displayContext.drawImage(captureCanvas, 0, 0, 640, 480);
-});
-
-// 当点击选择照片按钮时触发文件输入
-document.getElementById('uploadImage').addEventListener('click', function() {
-  fileInput.click();
-});
-
-// 当文件选择后将图片绘制到画布上
-fileInput.addEventListener('change', function() {
-  const file = this.files[0];
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const img = new Image();
-      img.onload = function() {
-        displayCanvas.width = img.width;
-        displayCanvas.height = img.height;
-        displayContext.drawImage(img, 0, 0, img.width, img.height);
-      };
-      img.src = e.target.result;
-    };
-    reader.readAsDataURL(file);
-  }
-});
-
-</script>
+<div class="login-container">
+  <h2>Login</h2>
+  <div class="form-input">
+    <input type="text" placeholder="Username" name="username" required>
+  </div>
+  <div class="form-input">
+    <input type="password" placeholder="Password" name="password" required>
+  </div>
+  <button class="login-button" type="submit">Login</button>
+</div>
 
 </body>
 </html>
