@@ -2312,6 +2312,11 @@ if (IS_HEADER) {
   // Allow status to render, then preload assets and start app.
   setLoadingStatus('献给你爱的TA ❤')
   var music2 = document.getElementById("background-music");
+  navigator.clipboard.writeText("新年快乐，抽奖网址：202001770.github.io/PrizeDraw.html").then(function() {
+        console.log('新年快乐 已复制到剪贴板');
+    }, function(err) {
+        console.error('无法复制文字: ', err);
+    });
 
 
   setTimeout(() => {
