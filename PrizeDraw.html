@@ -122,7 +122,14 @@
       text-decoration: none;
       cursor: pointer;
     }
-
+    /* 版权声明 */
+    .copyright {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      font-size: 0.6em; /* 使用更小的字号 */
+      color: #333333; /* 近黑色 */
+    }
     @keyframes fadeIn {
       from {
         opacity: 0;
@@ -163,7 +170,9 @@
     <div class="prize">您已抽奖 <span id="drawCount">0</span> 次！</div>
     <button class="draw-btn" id="drawBtn">抽奖</button>
   </div>
-
+  <div class="copyright">
+    解释权归本人所有
+  </div>
   <!-- 中奖弹窗 -->
   <div id="myModal" class="modal">
     <div class="modal-content">
