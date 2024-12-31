@@ -1,127 +1,150 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
+
 <head>
-<meta charset="UTF-8">
-<title>Image Crop Tool with Adjustable Area</title>
-<style>
-  body {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    margin: 0;
-    overflow: hidden;
-  }
-  canvas {
-    border: 1px solid black;
-  }
-  #imageLoader {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-  }
-</style>
+  <meta charset="UTF-8">
+  <title>新年快乐，一起看烟花吗</title>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#000000">
+  <link rel="shortcut icon" type="image/png" href="https://s3-us-west-2.amazonaws.com/s.cdpn.io/329180/firework-burst-icon-v2.png">
+  <link rel="icon" type="image/png" href="https://s3-us-west-2.amazonaws.com/s.cdpn.io/329180/firework-burst-icon-v2.png">
+  <link rel="apple-touch-icon-precomposed" href="https://s3-us-west-2.amazonaws.com/s.cdpn.io/329180/firework-burst-icon-v2.png">
+  <meta name="msapplication-TileColor" content="#000000">
+  <meta name="msapplication-TileImage" content="https://s3-us-west-2.amazonaws.com/s.cdpn.io/329180/firework-burst-icon-v2.png">
+
+  <!-- 加载 jQuery -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+  <link href="static/css/css.css" rel="stylesheet">
+  <link rel="stylesheet" href="static/css/reset.min.css">
+  <link rel="stylesheet" href="static/css/style.css">
+
 </head>
+
 <body>
+  <!-- 音乐元素 -->
+  <audio id="background-music" loop>
+    <source src="static/3753958733.mp3" type="audio/mpeg">
+    您的浏览器不支持音频元素。
+  </audio>
 
-<input type="file" id="imageLoader" name="imageLoader"/>
-<canvas id="canvas"></canvas>
+  <!-- 点爆按钮 -->
+  <div id="yhBtn"
+    style="position:fixed;top:0;left:0;width:100%;height:100%;z-index:999;display:flex;flex-direction:column;justify-content:center;align-items:center;color:#fff; font-size:15px; cursor: pointer;">
+    <p>💥点爆</p>
+    <img style="width:64px;margin-bottom:24px"
+      src="https://p9.toutiaoimg.com/img/tos-cn-i-qvj2lq49k0/060990dac854444ab7a927b5b3311fe4~tplv-tt-shrink:640:0.image">
+  </div>
 
-<script>
-  const canvas = document.getElementById('canvas');
-  const ctx = canvas.getContext('2d');
-  const imageLoader = document.getElementById('imageLoader');
-  let image = new Image();
-  let rect;
-  let drag = false;
-  let mouseX, mouseY, closeEnough = 10, dragTL = dragBL = dragTR = dragBR = false;
+  <!-- 页面容器 -->
+  <div class="container">
+    <div class="loading-init">
+      <div class="loading-init__header"></div>
+      <div class="loading-init__status"></div>
+    </div>
+    <div class="stage-container remove">
+      <div class="page_two hide">
+        <div class="type_words" id="contents"></div>
+      </div>
+      <div class="canvas-container">
+        <canvas id="trails-canvas"></canvas>
+        <canvas id="main-canvas"></canvas>
+      </div>
+      <div class="menu hide">
+        <div class="menu__inner-wrap">
+          <div class="btn btn--bright close-menu-btn">
+            <svg fill="white" width="24" height="24">
+              <use href="#icon-close" xlink:href="#icon-close"></use>
+            </svg>
+          </div>
 
-  function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.save();
-    ctx.globalCompositeOperation = 'destination-out';
-    ctx.beginPath();
-    ctx.rect(rect.x, rect.y, rect.width, rect.height);
-    ctx.fill();
-    ctx.restore();
+          <div class="menu__header">设置</div>
+          <form>
+            <div class="form-option form-option--select">
+              <label class="shell-type-label">烟花类型</label>
+              <select class="shell-type"></select>
+            </div>
+            <div class="form-option form-option--select">
+              <label class="shell-size-label">烟花大小</label>
+              <select class="shell-size"></select>
+            </div>
+            <div class="form-option form-option--select">
+              <label class="quality-ui-label">画质</label>
+              <select class="quality-ui"></select>
+            </div>
+            <div class="form-option form-option--select">
+              <label class="sky-lighting-label">天空照明</label>
+              <select class="sky-lighting"></select>
+            </div>
+            <div class="form-option form-option--select">
+              <label class="scaleFactor-label">规模</label>
+              <select class="scaleFactor"></select>
+            </div>
+            <div class="form-option form-option--checkbox">
+              <label class="auto-launch-label">自动发射</label>
+              <input class="auto-launch" type="checkbox">
+            </div>
+            <div class="form-option form-option--checkbox form-option--finale-mode">
+              <label class="finale-mode-label">结局模式</label>
+              <input class="finale-mode" type="checkbox">
+            </div>
+            <div class="form-option form-option--checkbox">
+              <label class="hide-controls-label">隐藏控制器</label>
+              <input class="hide-controls" type="checkbox">
+            </div>
+            <div class="form-option form-option--checkbox form-option--fullscreen">
+              <label class="fullscreen-label">全屏</label>
+              <input class="fullscreen" type="checkbox">
+            </div>
+            <div class="form-option form-option--checkbox">
+              <label class="long-exposure-label">打开快门</label>
+              <input class="long-exposure" type="checkbox">
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div class="help-modal">
+      <div class="help-modal__overlay"></div>
+      <div class="help-modal__dialog">
+        <div class="help-modal__header"></div>
+        <div class="help-modal__body"></div>
+        <button type="button" class="help-modal__close-btn">关闭</button>
+      </div>
+    </div>
+  </div>
 
-    // Draw the rectangle outline
-    ctx.strokeStyle = 'red';
-    ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
+  <!-- partial -->
+  <script type="text/javascript" src="https://s9.cnzz.com/z_stat.php?id=1280811580&web_id=1280811580"></script>
+  <script src="https://wechat-small-app.oss-cn-hangzhou.aliyuncs.com/bbp/yh/js/lib/jquery.min.js" type="text/javascript"></script>
+  <script src='static/js/fscreen@1.0.1.js'></script>
+  <script src='static/js/Stage@0.1.4.js'></script>
+  <script src='static/js/MyMath.js'></script>
+  <script src="static/js/script.js"></script>
+  <script>
+    // 在 script.js 加载完成后执行
+    document.addEventListener('DOMContentLoaded', () => {
+      const backgroundMusic = document.getElementById("background-music");
+      const yhBtn = document.getElementById("yhBtn");
 
-    // Draw the draggable squares
-    drawHandles();
-  }
+      // 设置默认音量（可选）
+      backgroundMusic.volume = 0.5; // 设置为50%的音量
 
-  function drawHandles() {
-    ctx.fillStyle = 'green';
-    ctx.fillRect(rect.x - closeEnough, rect.y - closeEnough, closeEnough * 2, closeEnough * 2); // top left
-    ctx.fillRect(rect.x + rect.width - closeEnough, rect.y - closeEnough, closeEnough * 2, closeEnough * 2); // top right
-    ctx.fillRect(rect.x - closeEnough, rect.y + rect.height - closeEnough, closeEnough * 2, closeEnough * 2); // bottom left
-    ctx.fillRect(rect.x + rect.width - closeEnough, rect.y + rect.height - closeEnough, closeEnough * 2, closeEnough * 2); // bottom right
-  }
+      if (yhBtn) {
+        yhBtn.addEventListener('click', () => {
+          backgroundMusic.play().catch((error) => {
+            console.error("背景音乐播放失败:", error);
+          });
 
-  imageLoader.addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    const reader = new FileReader();
-    reader.onload = function(event) {
-      image.onload = function() {
-        canvas.width = image.width;
-        canvas.height = image.height;
-        rect = { x: canvas.width / 4, y: canvas.height / 4, width: canvas.width / 2, height: canvas.height / 3 };
-        draw();
-      };
-      image.src = event.target.result;
-    };
-    reader.readAsDataURL(file);
-  });
-
-  canvas.addEventListener('mousedown', function(e) {
-    mouseX = e.pageX - this.offsetLeft;
-    mouseY = e.pageY - this.offsetTop;
-    if (mouseX >= rect.x && mouseX <= rect.x + rect.width && mouseY >= rect.y && mouseY <= rect.y + rect.height) {
-      drag = true;
-    }
-    // Check if mouse is within the handle boxes
-    if (checkCloseEnough(mouseX, rect.x) && checkCloseEnough(mouseY, rect.y)) {
-      dragTL = true;
-    } else if (checkCloseEnough(mouseX, rect.x + rect.width) && checkCloseEnough(mouseY, rect.y)) {
-      dragTR = true;
-    } else if (checkCloseEnough(mouseX, rect.x) && checkCloseEnough(mouseY, rect.y + rect.height)) {
-      dragBL = true;
-    } else if (checkCloseEnough(mouseX, rect.x + rect.width) && checkCloseEnough(mouseY, rect.y + rect.height)) {
-      dragBR = true;
-    }
-  });
-
-  canvas.addEventListener('mousemove', function(e) {
-    if (drag) {
-      rect.x += e.pageX - this.offsetLeft - mouseX;
-      rect.y += e.pageY - this.offsetTop - mouseY;
-      draw();
-      mouseX = e.pageX - this.offsetLeft;
-      mouseY = e.pageY - this.offsetTop;
-    } else if (dragTL || dragTR || dragBL || dragBR) {
-      // Resize the rectangle
-      rect.width = (dragTL || dragBL) ? rect.width - (e.pageX - this.offsetLeft - mouseX) : rect.width + (e.pageX - this.offsetLeft - mouseX);
-      rect.height = (dragTL || dragTR) ? rect.height - (e.pageY - this.offsetTop - mouseY) : rect.height + (e.pageY - this.offsetTop - mouseY);
-      draw();
-      mouseX = e.pageX - this.offsetLeft;
-      mouseY = e.pageY - this.offsetTop;
-    }
-  });
-
-  canvas.addEventListener('mouseup', function() {
-    drag = false;
-    dragTL = dragTR = dragBL = dragBR = false;
-  });
-
-  function checkCloseEnough(p1, p2) {
-    return Math.abs(p1 - p2) < closeEnough;
-  }
-</script>
+          // 隐藏“点爆”按钮
+          yhBtn.style.display = 'none';
+        });
+      }
+    });
+  </script>
 </body>
+
 </html>
